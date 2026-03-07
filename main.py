@@ -15,7 +15,7 @@ from astrbot.api.star import Context, Star, register
 import astrbot.api.message_components as Comp
 
 
-@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.4")
+@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.5")
 class AINewsPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -140,6 +140,16 @@ class AINewsPlugin(Star):
         all_news = self._filter_by_time(all_news, hours_range)
         all_news = self._deduplicate(all_news)
         all_news = self._categorize(all_news)
+        
+        logger.info(f"AI News: [调试] 获取到 {len(all_news)} 条新闻（去重后）")
+        for idx, news in enumerate(all_news[:5]):
+            logger.info(f"AI News: [调试] 新闻 {idx+1}:")
+            logger.info(f"  标题: {news.get('title', 'N/A')}")
+            logger.info(f"  摘要: {news.get('description', 'N/A')[:100]}...")
+            logger.info(f"  来源: {news.get('source', 'N/A')}")
+            logger.info(f"  链接: {news.get('link', 'N/A')}")
+        if len(all_news) > 5:
+            logger.info(f"AI News: [调试] ... 还有 {len(all_news) - 5} 条新闻")
         
         all_news = await self._summarize_news_with_llm(all_news)
         
