@@ -1,0 +1,143 @@
+{
+  "version": "1.0.0",
+  "description": "Curated AI news RSS feeds for OpenClaw morning briefings",
+  "lastUpdated": "2026-02-11",
+  "feeds": {
+    "aggregators": [
+      {
+        "id": "tldr-ai",
+        "name": "TLDR AI",
+        "url": "https://tldr.tech/api/rss/ai",
+        "frequency": "daily",
+        "priority": 1,
+        "description": "Daily AI industry digest"
+      },
+      {
+        "id": "hacker-news",
+        "name": "Hacker News",
+        "url": "https://hnrss.org/frontpage",
+        "frequency": "realtime",
+        "priority": 1,
+        "description": "Tech community breaking news"
+      },
+      {
+        "id": "the-decoder",
+        "name": "The Decoder",
+        "url": "https://the-decoder.com/feed/",
+        "frequency": "daily",
+        "priority": 1,
+        "description": "AI-focused news site"
+      },
+      {
+        "id": "last-week-in-ai",
+        "name": "Last Week in AI",
+        "url": "https://lastweekin.ai/feed",
+        "frequency": "weekly",
+        "priority": 2,
+        "description": "Weekly AI roundup"
+      },
+      {
+        "id": "marktechpost",
+        "name": "Marktechpost",
+        "url": "https://www.marktechpost.com/feed",
+        "frequency": "daily",
+        "priority": 2,
+        "description": "AI research and papers coverage"
+      }
+    ],
+    "labs": [
+      {
+        "id": "anthropic-news",
+        "name": "Anthropic News",
+        "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml",
+        "frequency": "varies",
+        "priority": 1,
+        "description": "Claude releases, company announcements",
+        "source": "Olshansk/rss-feeds"
+      },
+      {
+        "id": "openai-research",
+        "name": "OpenAI Research",
+        "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_openai_research.xml",
+        "frequency": "varies",
+        "priority": 1,
+        "description": "GPT releases, research papers",
+        "source": "Olshansk/rss-feeds"
+      },
+      {
+        "id": "xai-news",
+        "name": "xAI News",
+        "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_xainews.xml",
+        "frequency": "varies",
+        "priority": 2,
+        "description": "Grok releases",
+        "source": "Olshansk/rss-feeds"
+      },
+      {
+        "id": "google-ai",
+        "name": "Google AI",
+        "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_google_ai.xml",
+        "frequency": "varies",
+        "priority": 1,
+        "description": "Gemini, DeepMind announcements",
+        "source": "Olshansk/rss-feeds"
+      },
+      {
+        "id": "claude-code-changelog",
+        "name": "Claude Code Changelog",
+        "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_changelog_claude_code.xml",
+        "frequency": "varies",
+        "priority": 2,
+        "description": "Claude Code CLI updates",
+        "source": "Olshansk/rss-feeds"
+      }
+    ]
+  },
+  "optional": {
+    "description": "Additional feeds you may want to enable",
+    "feeds": [
+      {
+        "id": "anthropic-engineering",
+        "name": "Anthropic Engineering",
+        "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_engineering.xml",
+        "description": "Technical blog posts"
+      },
+      {
+        "id": "anthropic-research",
+        "name": "Anthropic Research",
+        "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_research.xml",
+        "description": "Research papers, alignment"
+      },
+      {
+        "id": "the-batch",
+        "name": "The Batch",
+        "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_the_batch.xml",
+        "description": "Andrew Ng's newsletter"
+      },
+      {
+        "id": "techcrunch-ai",
+        "name": "TechCrunch AI",
+        "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+        "description": "Mainstream AI coverage"
+      },
+      {
+        "id": "venturebeat-ai",
+        "name": "VentureBeat AI",
+        "url": "https://venturebeat.com/category/ai/feed/",
+        "description": "Enterprise AI news"
+      }
+    ]
+  },
+  "knownGaps": {
+    "description": "Major AI labs without RSS feeds",
+    "labs": [
+      "Zhipu AI (GLM series) - China",
+      "DeepSeek - China",
+      "Baidu (ERNIE) - China",
+      "Alibaba (Qwen) - China",
+      "ByteDance (Doubao) - China",
+      "Mistral AI - France",
+      "Meta AI - USA"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "admin_qq": {
+    "description": "管理员 QQ 号",
+    "type": "string",
+    "hint": "管理员可以手动触发推送和管理订阅者",
+    "default": ""
+  },
+  "subscribers": {
+    "description": "订阅者 QQ 号列表",
+    "type": "list",
+    "hint": "每日新闻会推送给这些 QQ 号，格式如 [\"123456\", \"789012\"]",
+    "default": []
+  },
+  "push_hour": {
+    "description": "每日推送时间（小时）",
+    "type": "int",
+    "default": 8,
+    "hint": "24小时制，如 8 表示早上8点"
+  },
+  "push_minute": {
+    "description": "每日推送时间（分钟）",
+    "type": "int",
+    "default": 0,
+    "hint": "0-59 之间的整数"
+  },
+  "onebot_platform_id": {
+    "description": "OneBot 平台 ID",
+    "type": "string",
+    "hint": "在 AstrBot 中配置的 OneBot 平台适配器 ID，用于发送消息",
+    "default": ""
+  },
+  "enable_scheduled_push": {
+    "description": "启用定时推送",
+    "type": "bool",
+    "default": true,
+    "hint": "关闭后只能通过指令手动获取新闻"
+  },
+  "news_hours_range": {
+    "description": "新闻时间范围（小时）",
+    "type": "int",
+    "default": 24,
+    "hint": "只获取多少小时内的新闻，默认24小时"
+  }
+}
