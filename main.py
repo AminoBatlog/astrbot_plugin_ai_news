@@ -15,21 +15,15 @@ from astrbot.api.star import Context, Star, register
 import astrbot.api.message_components as Comp
 
 
-@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.2")
+@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.3")
 class AINewsPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
-        # #region agent log
-        import json as _json; open(r'd:\Files\StudyMaterial\AI\AI-info\debug-776b9a.log','a',encoding='utf-8').write(_json.dumps({"sessionId":"776b9a","hypothesisId":"A","location":"main.py:__init__","message":"Plugin __init__ called","data":{"config_type":str(type(config)),"config_keys":list(config.keys()) if hasattr(config,'keys') else "no_keys"},"timestamp":__import__('time').time()*1000})+'\n')
-        # #endregion
         super().__init__(context)
         self.config = config
         self._scheduler_task: Optional[asyncio.Task] = None
         self._running = True
         self._feeds_data = None
         self._load_feeds()
-        # #region agent log
-        import json as _json; open(r'd:\Files\StudyMaterial\AI\AI-info\debug-776b9a.log','a',encoding='utf-8').write(_json.dumps({"sessionId":"776b9a","hypothesisId":"A","location":"main.py:__init__:end","message":"Plugin __init__ completed","data":{"feeds_loaded":self._feeds_data is not None},"timestamp":__import__('time').time()*1000})+'\n')
-        # #endregion
 
     def _load_feeds(self):
         """加载 feeds.json 配置"""
@@ -44,9 +38,6 @@ class AINewsPlugin(Star):
 
     async def initialize(self):
         """插件初始化，启动定时任务"""
-        # #region agent log
-        import json as _json; open(r'd:\Files\StudyMaterial\AI\AI-info\debug-776b9a.log','a',encoding='utf-8').write(_json.dumps({"sessionId":"776b9a","hypothesisId":"B","location":"main.py:initialize","message":"Plugin initialize called","data":{"enable_scheduled_push":self.config.get("enable_scheduled_push", True)},"timestamp":__import__('time').time()*1000})+'\n')
-        # #endregion
         if self.config.get("enable_scheduled_push", True):
             self._scheduler_task = asyncio.create_task(self._scheduler())
             logger.info("AI News: 定时推送任务已启动")
@@ -134,7 +125,7 @@ class AINewsPlugin(Star):
         feeds.sort(key=lambda x: x.get("priority", 99))
         
         async with aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=30)
+            timeout=aiohttp.ClientTimeout(total=60, connect=15)
         ) as session:
             tasks = [self._fetch_feed(session, feed) for feed in feeds]
             results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -161,7 +152,7 @@ class AINewsPlugin(Star):
             return []
         
         try:
-            async with session.get(url) as response:
+            async with session.get(url, ssl=False) as response:
                 if response.status != 200:
                     logger.warning(f"AI News: {name} 返回状态码 {response.status}")
                     return []
@@ -169,8 +160,14 @@ class AINewsPlugin(Star):
                 content = await response.text()
                 return self._parse_rss(content, name, feed.get("priority", 99))
                 
+        except aiohttp.ClientError as e:
+            logger.warning(f"AI News: 获取 {name} 网络错误: {type(e).__name__}: {e}")
+            return []
+        except asyncio.TimeoutError:
+            logger.warning(f"AI News: 获取 {name} 超时")
+            return []
         except Exception as e:
-            logger.warning(f"AI News: 获取 {name} 出错: {e}")
+            logger.warning(f"AI News: 获取 {name} 出错: {type(e).__name__}: {e}")
             return []
 
     def _parse_rss(self, content: str, source_name: str, priority: int) -> list:
@@ -450,9 +447,6 @@ class AINewsPlugin(Star):
     @filter.command("ainews")
     async def cmd_ainews(self, event: AstrMessageEvent):
         """获取 AI 新闻 - 使用 /ainews 立即获取, /ainews sub 订阅, /ainews unsub 取消订阅"""
-        # #region agent log
-        import json as _json; open(r'd:\Files\StudyMaterial\AI\AI-info\debug-776b9a.log','a',encoding='utf-8').write(_json.dumps({"sessionId":"776b9a","hypothesisId":"C","location":"main.py:cmd_ainews","message":"Command handler triggered","data":{"sender_id":str(event.get_sender_id()),"message_str":event.message_str[:100] if event.message_str else ""},"timestamp":__import__('time').time()*1000})+'\n')
-        # #endregion
         sender_id = event.get_sender_id()
         message_str = event.message_str.strip()
         
