@@ -15,7 +15,7 @@ from astrbot.api.star import Context, Star, register
 import astrbot.api.message_components as Comp
 
 
-@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.5")
+@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.6")
 class AINewsPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -53,25 +53,43 @@ class AINewsPlugin(Star):
                 pass
         logger.info("AI News: 插件已停止")
 
+    def _parse_push_times(self) -> list:
+        """解析推送时间配置，返回 (hour, minute) 列表"""
+        times = self.config.get("push_times", ["08:00"])
+        result = []
+        for t in times:
+            try:
+                parts = str(t).split(":")
+                hour, minute = int(parts[0]), int(parts[1])
+                if 0 <= hour <= 23 and 0 <= minute <= 59:
+                    result.append((hour, minute))
+            except:
+                pass
+        return result if result else [(8, 0)]
+
+    def _get_next_push_time(self) -> datetime:
+        """获取下一个推送时间"""
+        now = datetime.now()
+        push_times = self._parse_push_times()
+        candidates = []
+        
+        for hour, minute in push_times:
+            target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            if target <= now:
+                target += timedelta(days=1)
+            candidates.append(target)
+        
+        return min(candidates)
+
     async def _scheduler(self):
         """定时任务调度器"""
         await asyncio.sleep(5)
         
         while self._running:
             try:
-                push_hour = self.config.get("push_hour", 8)
-                push_minute = self.config.get("push_minute", 0)
-                
-                now = datetime.now()
-                target_time = now.replace(
-                    hour=push_hour, minute=push_minute, second=0, microsecond=0
-                )
-                
-                if now >= target_time:
-                    target_time += timedelta(days=1)
-                
-                wait_seconds = (target_time - now).total_seconds()
-                logger.info(f"AI News: 下次推送时间 {target_time}, 等待 {wait_seconds:.0f} 秒")
+                target_time = self._get_next_push_time()
+                wait_seconds = (target_time - datetime.now()).total_seconds()
+                logger.info(f"AI News: 下次推送时间 {target_time.strftime('%Y-%m-%d %H:%M')}, 等待 {wait_seconds:.0f} 秒")
                 
                 await asyncio.sleep(wait_seconds)
                 
