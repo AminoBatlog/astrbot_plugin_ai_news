@@ -15,7 +15,7 @@ from astrbot.api.star import Context, Star, register
 import astrbot.api.message_components as Comp
 
 
-@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.1")
+@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.2")
 class AINewsPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -169,10 +169,7 @@ class AINewsPlugin(Star):
         items = []
         
         try:
-            content = re.sub(r'<\?xml[^>]*\?>', '', content)
-            content = re.sub(r'xmlns=["\'][^"\']*["\']', '', content)
-            content = re.sub(r'xmlns:[a-z]+=["\'][^"\']*["\']', '', content)
-            
+            content = self._clean_xml_namespaces(content)
             root = ET.fromstring(content)
             
             rss_items = root.findall(".//item")
@@ -182,10 +179,7 @@ class AINewsPlugin(Star):
                     if news:
                         items.append(news)
             
-            atom_entries = root.findall(".//{http://www.w3.org/2005/Atom}entry")
-            if not atom_entries:
-                atom_entries = root.findall(".//entry")
-            
+            atom_entries = root.findall(".//entry")
             for entry in atom_entries:
                 news = self._parse_atom_entry(entry, source_name, priority)
                 if news:
@@ -197,6 +191,15 @@ class AINewsPlugin(Star):
             logger.warning(f"AI News: 处理 {source_name} 出错: {e}")
         
         return items
+
+    def _clean_xml_namespaces(self, content: str) -> str:
+        """清理 XML 命名空间，使解析更简单"""
+        content = re.sub(r'<\?xml[^>]*\?>', '', content)
+        content = re.sub(r'\sxmlns(?::[a-zA-Z0-9_-]+)?=["\'][^"\']*["\']', '', content)
+        content = re.sub(r'<([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)', r'<\2', content)
+        content = re.sub(r'</([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)', r'</\2', content)
+        content = re.sub(r'\s([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)=', r' \2=', content)
+        return content
 
     def _parse_rss_item(self, item: ET.Element, source_name: str, priority: int) -> Optional[dict]:
         """解析 RSS item"""
@@ -229,28 +232,9 @@ class AINewsPlugin(Star):
     def _parse_atom_entry(self, entry: ET.Element, source_name: str, priority: int) -> Optional[dict]:
         """解析 Atom entry"""
         title_elem = entry.find("title")
-        if title_elem is None:
-            title_elem = entry.find("{http://www.w3.org/2005/Atom}title")
-        
         link_elem = entry.find("link")
-        if link_elem is None:
-            link_elem = entry.find("{http://www.w3.org/2005/Atom}link")
-        
-        pub_elem = entry.find("published")
-        if pub_elem is None:
-            pub_elem = entry.find("{http://www.w3.org/2005/Atom}published")
-        if pub_elem is None:
-            pub_elem = entry.find("updated")
-        if pub_elem is None:
-            pub_elem = entry.find("{http://www.w3.org/2005/Atom}updated")
-        
-        summary_elem = entry.find("summary")
-        if summary_elem is None:
-            summary_elem = entry.find("{http://www.w3.org/2005/Atom}summary")
-        if summary_elem is None:
-            summary_elem = entry.find("content")
-        if summary_elem is None:
-            summary_elem = entry.find("{http://www.w3.org/2005/Atom}content")
+        pub_elem = entry.find("published") or entry.find("updated")
+        summary_elem = entry.find("summary") or entry.find("content")
         
         title = title_elem.text if title_elem is not None and title_elem.text else ""
         link = ""
