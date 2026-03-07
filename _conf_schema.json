@@ -40,5 +40,18 @@
     "type": "int",
     "default": 24,
     "hint": "只获取多少小时内的新闻，默认24小时"
+  },
+  "enable_llm_summary": {
+    "description": "启用 LLM 中文摘要",
+    "type": "bool",
+    "default": true,
+    "hint": "使用 LLM 将英文新闻翻译/概括为中文"
+  },
+  "llm_provider_id": {
+    "description": "LLM 模型提供商 ID",
+    "type": "string",
+    "default": "",
+    "hint": "留空则使用 AstrBot 默认模型，填写则使用指定的模型提供商 ID",
+    "_special": "select_provider"
   }
 }

@@ -1,7 +1,7 @@
 name: astrbot_plugin_ai_news
 display_name: AI 新闻推送
 desc: 每日定时推送 AI 行业新闻，支持 OneBot/QQ
-version: v0.0.3
+version: v0.0.4
 author: 战狼阿米诺
 repo: https://github.com/Soulter/helloworld
 support_platforms:

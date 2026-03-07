@@ -15,7 +15,7 @@ from astrbot.api.star import Context, Star, register
 import astrbot.api.message_components as Comp
 
 
-@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.3")
+@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.4")
 class AINewsPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -140,6 +140,8 @@ class AINewsPlugin(Star):
         all_news = self._filter_by_time(all_news, hours_range)
         all_news = self._deduplicate(all_news)
         all_news = self._categorize(all_news)
+        
+        all_news = await self._summarize_news_with_llm(all_news)
         
         return all_news
 
@@ -383,6 +385,100 @@ class AINewsPlugin(Star):
         
         return news_list
 
+    async def _summarize_news_with_llm(self, news_list: list) -> list:
+        """使用 LLM 将新闻翻译/概括为中文"""
+        if not self.config.get("enable_llm_summary", True):
+            logger.info("AI News: LLM 摘要功能已禁用")
+            return news_list
+        
+        if not news_list:
+            return news_list
+        
+        try:
+            provider_id = self.config.get("llm_provider_id", "")
+            if not provider_id:
+                provider = self.context.get_using_provider()
+                if provider:
+                    provider_id = provider.provider_id if hasattr(provider, 'provider_id') else ""
+            
+            if not provider_id:
+                logger.warning("AI News: 未找到可用的 LLM 提供商，跳过中文摘要")
+                return news_list
+            
+            batch_size = 10
+            for i in range(0, len(news_list), batch_size):
+                batch = news_list[i:i + batch_size]
+                prompt = self._build_summary_prompt(batch)
+                
+                try:
+                    llm_resp = await self.context.llm_generate(
+                        chat_provider_id=provider_id,
+                        prompt=prompt,
+                    )
+                    
+                    if llm_resp and llm_resp.completion_text:
+                        self._parse_llm_summary(batch, llm_resp.completion_text)
+                        logger.info(f"AI News: 已翻译 {len(batch)} 条新闻")
+                except Exception as e:
+                    logger.warning(f"AI News: LLM 翻译批次 {i//batch_size + 1} 失败: {e}")
+            
+            return news_list
+            
+        except Exception as e:
+            logger.error(f"AI News: LLM 摘要处理失败: {e}")
+            return news_list
+
+    def _build_summary_prompt(self, news_batch: list) -> str:
+        """构建 LLM 翻译提示词"""
+        news_data = []
+        for idx, news in enumerate(news_batch):
+            news_data.append({
+                "id": idx,
+                "title": news.get("title", ""),
+                "description": news.get("description", "")[:300]
+            })
+        
+        prompt = """你是一个 AI 新闻翻译助手。请将以下英文新闻标题和摘要翻译成简洁的中文。
+
+要求：
+1. 标题翻译要准确、简洁
+2. 摘要概括为1-2句话的中文，突出核心内容
+3. 保持专业术语的准确性（如 GPT、Claude、Gemini 等模型名保留英文）
+4. 严格按照 JSON 格式返回，不要添加任何其他内容
+
+输入新闻：
+""" + json.dumps(news_data, ensure_ascii=False) + """
+
+请返回如下格式的 JSON 数组（注意：只返回 JSON，不要有其他文字）：
+[{"id": 0, "title_zh": "中文标题", "summary_zh": "中文摘要"}, ...]"""
+        
+        return prompt
+
+    def _parse_llm_summary(self, news_batch: list, llm_response: str) -> None:
+        """解析 LLM 返回的中文摘要并更新新闻列表"""
+        try:
+            json_match = re.search(r'\[[\s\S]*\]', llm_response)
+            if not json_match:
+                logger.warning("AI News: LLM 响应中未找到 JSON 数组")
+                return
+            
+            summaries = json.loads(json_match.group())
+            
+            summary_map = {item.get("id"): item for item in summaries}
+            
+            for idx, news in enumerate(news_batch):
+                if idx in summary_map:
+                    summary = summary_map[idx]
+                    if summary.get("title_zh"):
+                        news["title_zh"] = summary["title_zh"]
+                    if summary.get("summary_zh"):
+                        news["summary_zh"] = summary["summary_zh"]
+                        
+        except json.JSONDecodeError as e:
+            logger.warning(f"AI News: 解析 LLM JSON 响应失败: {e}")
+        except Exception as e:
+            logger.warning(f"AI News: 处理 LLM 响应失败: {e}")
+
     def _format_news_message(self, news_list: list) -> str:
         """格式化新闻消息"""
         now = datetime.now()
@@ -418,14 +514,21 @@ class AINewsPlugin(Star):
                 message += f"{cat} ({len(categorized[cat])}条)\n\n"
                 
                 for i, news in enumerate(categorized[cat][:10], 1):
+                    title_zh = news.get("title_zh")
                     title = news.get("title", "无标题")
+                    summary_zh = news.get("summary_zh")
                     desc = news.get("description", "")
                     source = news.get("source", "未知来源")
                     link = news.get("link", "")
                     
-                    message += f"{i}️⃣ {title}\n"
-                    if desc:
-                        message += f"{desc[:100]}{'...' if len(desc) > 100 else ''}\n"
+                    display_title = title_zh if title_zh else title
+                    display_desc = summary_zh if summary_zh else desc
+                    
+                    message += f"{i}️⃣ {display_title}\n"
+                    if title_zh and title:
+                        message += f"（{title}）\n"
+                    if display_desc:
+                        message += f"{display_desc[:150]}{'...' if len(display_desc) > 150 else ''}\n"
                     message += f"来源：{source}\n"
                     message += f"{link}\n\n"
                 
