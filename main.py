@@ -15,7 +15,7 @@ from astrbot.api.star import Context, Star, register
 import astrbot.api.message_components as Comp
 
 
-@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.8")
+@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.9")
 class AINewsPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
