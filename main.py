@@ -15,7 +15,7 @@ from astrbot.api.star import Context, Star, register
 import astrbot.api.message_components as Comp
 
 
-@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.6")
+@register("ai_news", "战狼阿米诺", "AI 新闻每日推送插件", "0.0.7")
 class AINewsPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -118,12 +118,26 @@ class AINewsPlugin(Star):
             if admin_qq and admin_qq not in subscribers:
                 subscribers = [admin_qq] + list(subscribers)
             
+            from astrbot.api.event import filter as event_filter
+            platform = self.context.get_platform(event_filter.PlatformAdapterType.AIOCQHTTP)
+            
+            if not platform:
+                logger.error("AI News: 无法获取 aiocqhttp 平台适配器")
+                return
+            
+            client = platform.get_client()
+            if not client:
+                logger.error("AI News: 无法获取 aiocqhttp 客户端")
+                return
+            
             for qq in subscribers:
                 if qq:
-                    umo = f"aiocqhttp:FriendMessage:{qq}"
                     try:
-                        chain = MessageChain().message(message_text)
-                        await self.context.send_message(umo, chain)
+                        await client.api.call_action(
+                            'send_private_msg',
+                            user_id=int(qq),
+                            message=message_text
+                        )
                         logger.info(f"AI News: 已推送给 {qq}")
                     except Exception as e:
                         logger.error(f"AI News: 推送给 {qq} 失败: {e}")
